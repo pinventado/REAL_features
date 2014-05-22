@@ -1,5 +1,6 @@
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from nltk.tag.stanford import NERTagger
 from HTMLParser import HTMLParser
 import requests, nltk, json, urllib2, os.path
 #nltk.download()
@@ -9,6 +10,9 @@ stoplist.append("tell")
 lemmatizer = WordNetLemmatizer()
 parser = HTMLParser()
 mapfile = 'wordmap.json'
+nermuc = NERTagger('stanford-ner/classifiers/english.muc.7class.distsim.crf.ser.gz','stanford-ner/stanford-ner.jar')
+nereng = NERTagger('stanford-ner/classifiers/english.all.3class.distsim.crf.ser.gz','stanford-ner/stanford-ner.jar')
+ner_categories = ['LOCATION', 'TIME', 'PERSON', 'ORGANIZATION', 'MONEY', 'PERCENT', 'DATE']
 
 class WordCategoryChecker:
 	def __init__(self, mapfile_batch=10):
@@ -67,16 +71,27 @@ class SentenceCategoryChecker:
 		self.word_check = WordCategoryChecker()
 		self.isHTML = isHTML
 
-	def check(self, sentence, category_list):
+	def check(self, sentence, categories):
+		category_list = list(categories)
+		orig_sentence = sentence
+		result = {}				
 		if self.isHTML:
 			sentence = nltk.clean_html(parser.unescape(urllib2.unquote(sentence).decode('utf-8', errors='ignore')))
-
-		#print sentence
+		
+		punc_sentence = ''.join(e for e in sentence if e.isalnum() or e.isspace() or e in ['.', ',', '?', '!', "'",':',';','$']) 
 		sentence = ''.join(e for e in sentence if e.isalnum() or e.isspace())
-		#print sentence 
-		result = {}
+
+		hasNERCateg = False
 		for category in category_list:
-			result[category]= False
+			result[category] = False
+		for categ in ner_categories:
+			if categ.lower() in category_list:
+				hasNERCateg = True
+				category_list.remove(categ.lower())
+		if hasNERCateg:			
+			result.update(self.get_NER_categ(punc_sentence))
+			print "NER", punc_sentence, result
+	
 		for word in sentence.split(" "):			
 			word = lemmatizer.lemmatize(word.lower())
 			if not word in stoplist and len(word)>1:				
@@ -84,10 +99,33 @@ class SentenceCategoryChecker:
 				for category in category_list:					
 					if self.word_check.check(word, category):
 						result[category] = True
-						print word, category
-				#print word	
+						#print word, category
+					else:
+						result[category] = False
+				#print word
+		#print "done"
+		result['image'] = self.check_for_image(orig_sentence)	
 		return result
 
+	def check_for_image(self, sentence):
+		return sentence.find("<img")!= -1
+
+	def get_NER_categ(self, sentence):
+		print 'Checking Stanford NER'
+		result = {}			
+		ner_result = nermuc.tag(sentence.split())		
+		for categ in ner_categories:
+			if categ in [it[1] for it in ner_result]:
+				result[categ.lower()] = True
+			else:
+				result[categ.lower()] = False
+				ner_result = nermuc.tag(sentence.split())		
+		ner_result = nereng.tag(sentence.split())
+		for categ in ner_categories:
+			if categ in [it[1] for it in ner_result]:
+				result[categ.lower()] = True
+
+		return result
 #sc = SentenceCategoryChecker()
 #print sc.check("if there are 2 dogs inside the van, and one got lost. How many dogs would be left?",['car','animal'])
 #print sc.check("A sugar cookie recipe calls for 3 1/2 cups of sugar to make 6 dozen cookies. Based on the recipe, how many cups of sugar must be used to make 20 dozen sugar cookies?",['car'])

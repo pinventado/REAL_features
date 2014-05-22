@@ -8,12 +8,16 @@ import re, csv, nltk
 #sample = clean_str("<p>Doc Worker is a regular customer at the Waterfront Coffee Shop. The manager has figured that Doc&rsquo;s probability of ordering ham is 0.8; and eggs, 0.65. What is the probability that (leave your answer as a percent, WITHOUT the %)</p><p>e)&nbsp; He orders at least one, either ham or eggs?<strong> </strong></p>")
 sc = SentenceCategoryChecker(isHTML=True)
 #categories = ['car','animal']
-categories = ['car','animal','person','sport','place','object','food','subject']
+categories = ['car','animal','sport','object','food','subject','place', 'location','time', 'person', 'organization' ,'money', 'percent','date']
+options = [('image',True)]
 header = ["Question"]
 #line = "Question, "
 #first = True   
 for categ in categories:
 	header.append(categ)
+for item in options:
+	if item[1]:
+		header.append(item[0])
 #print header
 #		out = categ
 #		if first:
@@ -52,7 +56,10 @@ for row in reader:
 			#line+= out
 			#print item 		
 			#cur_row.append(col[1])
-		print cur_row
+		#print cur_row
+		for item in options:
+			if item[1]:
+				cur_row.append(results[item[0]])
 		writer.writerow(cur_row)
 	
 #print sc.check("if there are 2 dogs inside the van, and one got lost. How many dogs would be left?",['car','animal'])
