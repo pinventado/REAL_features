@@ -4,7 +4,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tag.stanford import NERTagger
 from HTMLParser import HTMLParser
 from multiprocessing import Pool
-import csv, urllib2, nltk
+import ConfigParser, csv, urllib2, nltk, os
 
 parser = HTMLParser()
 lemmatizer = WordNetLemmatizer()
@@ -23,6 +23,8 @@ NER_categories = []
 keyword_categories = {}
 columnval_categories = {}
 
+history_file = "history.cfg"
+
 # Named entitory recognizer files
 nermuc = NERTagger('stanford-ner/classifiers/english.muc.7class.distsim.crf.ser.gz','stanford-ner/stanford-ner.jar')
 nereng = NERTagger('stanford-ner/classifiers/english.all.3class.distsim.crf.ser.gz','stanford-ner/stanford-ner.jar')
@@ -32,7 +34,7 @@ batch_list = None
 
 ''' Adds category features to an existing CSV feature-file using ConceptNet, Stanford NER, keywords or column values '''
 class DataManager:
-	def __init__(self, source_file, output_file, focus_column, read_mode="rU", write_mode="wb", batch = 100, pool_size = 3):
+	def __init__(self, source_file, output_file, focus_column, read_mode="rU", write_mode="wb", batch = 100, pool_size = 4):
 		self.headers = []
 		self.source_file = source_file
 		self.output_file = output_file
@@ -43,8 +45,6 @@ class DataManager:
 		self.pool_size = pool_size
 
 		self.headers = []
-		self.row_processors = []	
-
 		self.split_pool = None
 		self.temp_row = None
 
@@ -89,12 +89,23 @@ class DataManager:
 		self.file_writer = csv.writer(open(self.output_file,self.write_mode), dialect='excel')
 
 	''' Read and process source file then store results to target file '''
-	def read_data(self):
-		row_ct = 0
+	def read_data(self):		
 		self.split_pool = Pool(processes=self.pool_size)
 		self.temp_row = []
-		complete_header = self.file_reader.next() + self.headers
-		self.file_writer.writerow(complete_header)
+		row_ct = 0
+
+		if self.write_mode == 'a' and os.path.isfile(history_file):
+			config = ConfigParser.RawConfigParser()
+			config.read(history_file)
+			hist_ct = config.getint('History','last_row')
+			row_ct = 0
+			for i in range(0, hist_ct + 1):
+				self.file_reader.next()
+				row_ct += 1
+		else:
+			complete_header = self.file_reader.next() + self.headers
+			self.file_writer.writerow(complete_header)
+
 		for row in self.file_reader:
 			# Clean, split and store words asynchrously and send results to callback function
 			self.split_pool.apply_async(clean_split_store, (row, self.focus_column, row_ct % self.batch), callback = add_result_to_list)
@@ -102,6 +113,7 @@ class DataManager:
 			# Process entire batch				
 			if row_ct != 0 and row_ct % self.batch == 0:
 				self.process_batch()
+				self.store_history(row_ct)
 			
 			# Append row from source file to temporary containter		
 			self.temp_row.append(row)
@@ -112,6 +124,7 @@ class DataManager:
 		if (row_ct - 1) % self.batch !=0:
 			# Process rows exceeding batch value
 			self.process_batch()
+			self.store_history(row_ct)
 
 		print "Total read: ", row_ct
 
@@ -163,8 +176,13 @@ class DataManager:
 		self.temp_row = []
 		batch_list = [None] * self.batch
 
-	def add_row_processor(self, strategy):
-		self.row_processors.append(strategy)
+	def store_history(self, last_row):
+		config = ConfigParser.RawConfigParser()
+		config.add_section('History')
+		config.set('History','last_row', last_row)
+		with open(history_file, 'w') as f:
+			config.write(f)
+
 
 ''' Clean split and return sentence '''
 def clean_split_store(data, focus_column, index):

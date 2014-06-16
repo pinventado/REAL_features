@@ -1,7 +1,8 @@
 import requests, json, os.path
 
 mapfile = 'wordmap.json'
-
+s = requests.session()
+s.keep_alive = False
 ''' Retrieves word categories using ConceptNet '''
 class WordCategoryChecker:
 	def __init__(self, mapfile_batch=10, confidence_threshold = 2):
@@ -53,7 +54,7 @@ class WordCategoryChecker:
 			# Avoid very long words; they may be other elements like pictures
 			if len(word)<100:
 				# Send word - category query to ConceptNet
-				result = requests.get("http://conceptnet5.media.mit.edu/data/5.2/search?limit=1&filter=core&rel=/r/IsA&start=/c/en/"+word+"&end=/c/en/"+category)
+				result = requests.get("http://conceptnet5.media.mit.edu/data/5.2/search?limit=1&filter=core&rel=/r/IsA&start=/c/en/"+word+"&end=/c/en/"+category)#, headers={'Connection':'close'})
 
 				data = result.json()
 				

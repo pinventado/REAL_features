@@ -24,7 +24,7 @@ keyword_categories = [('geometry',['square','circle','rectangle','triangle','ang
 columnval_categories = [('real_world_reference',is_real_world,['car','animal','sport','object','food','subject','place','location','person','organization','money'])]
 
 # Specify column in source data containing questions
-dm = DataManager(source, target, 32)
+dm = DataManager(source, target, 32, write_mode='a')
 
 # Add categories into header
 dm.add_header(conceptnet_categories,header_type = "conceptnet")
