@@ -3,3 +3,4 @@
 *.cfg
 *.xls
 *.xlsx
+.DS_Store
