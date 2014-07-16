@@ -1,4 +1,9 @@
-import requests, json, os.path
+import requests, json, os.path, sys, traceback, urllib2, json
+
+# Debugger for URLLib2
+handler=urllib2.HTTPHandler(debuglevel=1)
+opener = urllib2.build_opener(handler)
+urllib2.install_opener(opener)
 
 mapfile = 'wordmap.json'
 s = requests.session()
@@ -36,6 +41,7 @@ class WordCategoryChecker:
 
 	''' Identify if a word belongs to a category '''
 	def check(self, word, category):
+
 		# Return if word itself is the category
 		if word == category:
 			return True
@@ -50,14 +56,12 @@ class WordCategoryChecker:
 		# Check if word belongs to a category according to ConceptNet
 		else:
 			found = False
-
 			# Avoid very long words; they may be other elements like pictures
 			if len(word)<100:
 				# Send word - category query to ConceptNet
-				result = requests.get("http://conceptnet5.media.mit.edu/data/5.2/search?limit=1&filter=core&rel=/r/IsA&start=/c/en/"+word+"&end=/c/en/"+category)#, headers={'Connection':'close'})
+				result = urllib2.urlopen("http://conceptnet5.media.mit.edu/data/5.2/search?limit=1&filter=core&rel=/r/IsA&start=/c/en/"+word+"&end=/c/en/"+category)
+				data = json.loads(result.read())
 
-				data = result.json()
-				
 				# Check if ConceptNet results indicate that the word and category are at the start and end of a relationship, it is an "IsA" relationship
 				# and the weight (confidence) is acceptable				
 				for edges in data['edges']:
@@ -70,4 +74,5 @@ class WordCategoryChecker:
 						
 				# Add new mapping
 				self.add_mapping(word, category, found)	
-			return found
+		return found
+		

@@ -5,6 +5,13 @@ from nltk.tag.stanford import NERTagger
 from HTMLParser import HTMLParser
 from multiprocessing import Pool
 import ConfigParser, csv, urllib2, nltk, os
+import multiprocessing, logging, sys
+
+
+#Multiprocessing debugger
+logger = multiprocessing.log_to_stderr()
+logger.setLevel(multiprocessing.SUBDEBUG)
+logger.warning('doomed')
 
 parser = HTMLParser()
 lemmatizer = WordNetLemmatizer()
@@ -140,21 +147,34 @@ class DataManager:
 		batch_list = [x for x in batch_list if x is not None]
 
 		# Get category of each word based on keywords
-		keyword_pool = Pool(processes=self.pool_size)
-		keyword_result = keyword_pool.map_async(get_keyword_categories, batch_list)
+		process_pool = Pool(processes=self.pool_size)
+		keyword_result = process_pool.map_async(get_keyword_categories, batch_list)
 
 		# Get category of each word using conceptnet
-		conceptnet_pool = Pool(processes=self.pool_size)
-		conceptnet_result = conceptnet_pool.map_async(get_conceptnet_categories, batch_list)
+		#conceptnet_pool = Pool(processes=self.pool_size)
+		conceptnet_result = process_pool.map_async(get_conceptnet_categories, batch_list)
 
 		# Get NER categories
-		NER_pool = Pool(processes=self.pool_size)
-		NER_result = NER_pool.map_async(get_NER_categories, batch_list)
+		#NER_pool = Pool(processes=self.pool_size)
+		NER_result = process_pool.map_async(get_NER_categories, batch_list)
 
 		# Wait for processes in the batch to finish
+		print "Keyword"
+		sys.stdout.flush()
 		keyword_result = keyword_result.get()
-		conceptnet_result = conceptnet_result.get()				
+		
+		#while(not conceptnet_result.ready()):
+		#	print conceptnet_result._number_left
+		print "NER"
+		sys.stdout.flush()
 		NER_result = NER_result.get()
+
+		print "Concept net"
+		sys.stdout.flush()
+		conceptnet_result = conceptnet_result.get()
+		#conceptnet_result = process_pool.map(get_conceptnet_categories, batch_list)
+		
+		
 
 		# Merge results from each type of category
 		for i in range(0,len(keyword_result)):
@@ -189,9 +209,6 @@ def clean_split_store(data, focus_column, index):
 	result = nltk.clean_html(parser.unescape(urllib2.unquote(data[focus_column]).decode('utf-8', errors='ignore'))).split()
 	
 	# Apply user defined strategies on cleaned and split data
-	#for strategy in self.row_processors:
-	#	strategy(result)		
-	#print "Storing in ", str(index)
 	return (index, result)
 
 ''' Add results to list '''
@@ -206,11 +223,11 @@ def get_conceptnet_categories(word_list):
 	for category in conceptnet_categories:	
 		result[category] = False
 
-	for word in word_list:
+	for word in word_list:		
 		word = ''.join(e for e in word if e.isalnum() or e.isspace())
-		word = lemmatizer.lemmatize(word.lower())
+		word = lemmatizer.lemmatize(word.lower()) 
 		if not word in stoplist and len(word)>1:	
-			for category in conceptnet_categories:			
+			for category in conceptnet_categories:	
 				if word_checker.check(word, category):
 					result[category] = True
 	return result
@@ -230,7 +247,6 @@ def get_keyword_categories(word_list):
 	return result
 
 def get_NER_categories(word_list):
-	#print 'Checking Stanford NER'
 	result = {}			
 	for categ in NER_categories:
 		result[categ.lower()] = False
