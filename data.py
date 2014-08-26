@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import ConfigParser, csv, urllib2, nltk, os
 import multiprocessing, logging, sys
 
-
+csv.field_size_limit(sys.maxsize)
 #Multiprocessing debugger
 logger = multiprocessing.log_to_stderr()
 logger.setLevel(multiprocessing.SUBDEBUG)
