@@ -206,7 +206,7 @@ class DataManager:
 
 ''' Clean split and return sentence '''
 def clean_split_store(data, focus_column, index):
-	result = nltk.clean_html(parser.unescape(urllib2.unquote(data[focus_column]).decode('utf-8', errors='ignore'))).split()
+	result = nltk.clean_html(parser.unescape(urllib2.unquote(data[focus_column]).decode('utf-8', 'ignore'))).split()
 	
 	# Apply user defined strategies on cleaned and split data
 	return (index, result)
@@ -224,7 +224,7 @@ def get_conceptnet_categories(word_list):
 		result[category] = False
 
 	for word in word_list:		
-		word = ''.join(e for e in word if e.isalnum() or e.isspace())
+		word = ''.join(e for e in word if e.isalnum() or e.isspace()).encode('ascii','ignore')
 		word = lemmatizer.lemmatize(word.lower()) 
 		if not word in stoplist and len(word)>1:	
 			for category in conceptnet_categories:	
@@ -238,7 +238,7 @@ def get_keyword_categories(word_list):
 		result[category] = False
 
 	for word in word_list:
-		word = ''.join(e for e in word if e.isalnum() or e.isspace())
+		word = ''.join(e for e in word if e.isalnum() or e.isspace()).encode('ascii','ignore')
 		if not word in stoplist and len(word)>1:	
 			for category in keyword_categories:
 				for keyword in keyword_categories[category]:
@@ -251,7 +251,7 @@ def get_NER_categories(word_list):
 	for categ in NER_categories:
 		result[categ.lower()] = False
 
-	word_list = [''.join(e for e in x if e.isalnum() or e.isspace() or e in ['.', ',', '?', '!', "'",':',';','$']).encode('ascii',errors='ignore') for x in word_list]
+	word_list = [''.join(e for e in x if e.isalnum() or e.isspace() or e in ['.', ',', '?', '!', "'",':',';','$']).encode('ascii','ignore') for x in word_list]
 	ner_result = nermuc.tag(word_list)		
 	for categ in NER_categories:
 		if categ in [it[1].lower() for it in ner_result]:
