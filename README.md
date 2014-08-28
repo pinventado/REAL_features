@@ -1,21 +1,27 @@
 REAL
 ====
 
-These scripts generate keyword, Conceptnet and Stanford NER based features from a given text. This is initially developed for creating feather from problem bodies in ASSISTments but can be used for other text.
+These scripts generate keyword, Conceptnet, Stanford NER and feature-based features from a given text. This is initially developed for creating feather from problem bodies in ASSISTments but can be used for other text.
 
 Feature generators
 ------------------
 4 different methods were used to generate the features from the problem bodies.
 
 1. Keywords
-...The problem body is checked for the presence of user-defined keywords
-2. ConceptNet 5
-...The problem body is checked for the presence of words related to user-defined concepts. Relationships are inferred from [MIT ConceptNet 5](http://conceptnet5.media.mit.edu/)
-3. Stanford Named Entity Recognizer (NER)
-...The problem body is checked for the presence of entities defined in the [Stanford NER](http://nlp.stanford.edu/software/CRF-NER.shtml). The entities include place, location, time, person, organization, money, percentage and date.
-4. Feature-based features
-...Features based on other features can also be created. For example, a *real-world-reference* feature was created by checking for the presence of other features in the problem (i.e., car, animal, person, ...).
 
+   The problem body is checked for the presence of user-defined keywords
+
+2. ConceptNet 5
+
+   The problem body is checked for the presence of words related to user-defined concepts. Relationships are inferred from [MIT ConceptNet 5](http://conceptnet5.media.mit.edu/)
+
+3. Stanford Named Entity Recognizer (NER)
+
+   The problem body is checked for the presence of entities defined in the [Stanford NER](http://nlp.stanford.edu/software/CRF-NER.shtml). The entities include place, location, time, person, organization, money, percentage and date.
+
+4. Feature-based features
+
+   Features based on other features can also be created. For example, a *real-world-reference* feature was created by checking for the presence of other features in the problem (i.e., car, animal, person, ...).
 
 Feature generation
 ------------------
