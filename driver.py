@@ -14,7 +14,7 @@ if __name__=="__main__":
 	target = "out.csv"
 
 	# Row containing the problem body
-	DATA_ROW = 32
+	DATA_COL = 32
 
 	# Categories to be checked using ConceptNet
 	conceptnet_categories = ['car','animal','sport','object','food','subject','place']
@@ -29,7 +29,7 @@ if __name__=="__main__":
 	columnval_categories = [('real_world_reference',is_real_world,['car','animal','sport','object','food','subject','place','location','person','organization','money'])]
 
 	# Specify column in source data containing questions
-	dm = DataManager(source, target, DATA_ROW, write_mode='a', batch = 100, pool_size = 8)
+	dm = DataManager(source, target, DATA_COL, write_mode='a', batch = 100, pool_size = 8)
 
 	# Add categories into header
 	dm.add_header(conceptnet_categories,header_type = "conceptnet")
